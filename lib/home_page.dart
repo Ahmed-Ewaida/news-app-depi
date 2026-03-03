@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:news_app/article_detail_page.dart';
-import 'package:news_app/article_model.dart';
+import 'package:news_app/cubit/news_cubit.dart';
+import 'package:news_app/cubit/news_state.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,90 +12,72 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Article> articles = [
-    Article(
-      title: 'Sample Article 1',
-      description: 'This is a description for article 1.',
-      urlToImage: 'https://example.com/image1.jpg',
-      url: 'https://example.com/article1',
-    ),
-    Article(
-      title: 'Sample Article 2',
-      description: 'This is a description for article 2.',
-      urlToImage: 'https://example.com/image2.jpg',
-      url: 'https://example.com/article2',
-    ),
-    Article(
-      title: 'Sample Article 3',
-      description: 'This is a description for article 3.',
-      urlToImage: 'https://example.com/image3.jpg',
-      url: 'https://example.com/article3',
-    ),
-    Article(
-      title: 'Sample Article 4',
-      description: 'This is a description for article 4.',
-      urlToImage: 'https://example.com/image4.jpg',
-      url: 'https://example.com/article4',
-    ),
-    Article(
-      title: 'Sample Article 5',
-      description: 'This is a description for article 5.',
-      urlToImage: 'https://example.com/image5.jpg',
-      url: 'https://example.com/article5',
-    ),
-  ];
-
   @override
   void initState() {
+    BlocProvider.of<NewsCubit>(context).getNews();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('News App'),
-      ),
-      body: ListView.builder(
-        itemCount: articles.length,
-        itemBuilder: (context, index) {
-          final article = articles[index];
-          return InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ArticleDetailPage(article: article),
+      appBar: AppBar(title: const Text('News App')),
+      body: BlocBuilder<NewsCubit, NewsState>(
+        builder: (context, state) {
+            if (state is NewsLoadingState) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is NewsErrorState) {
+              return Center(child: Text('Error: ${state.error}'));
+            } else if (state is NewsLoadedState) {
+          return ListView.builder(
+            itemCount: state.news.length,
+            itemBuilder: (context, index) {
+              final article = state.news[index];
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ArticleDetailPage(article: article),
+                    ),
+                  );
+                },
+                child: Card(
+                  margin: const EdgeInsets.all(8.0),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (article.urlToImage != null)
+                          Image.network(article.urlToImage!),
+                        const SizedBox(height: 8.0),
+                        Text(
+                          article.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.0,
+                          ),
+                        ),
+                        const SizedBox(height: 4.0),
+                        if (article.description != null)
+                          Text(article.description!,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14.0)),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
-            child: Card(
-              margin: const EdgeInsets.all(8.0),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (article.urlToImage != null)
-                      Image.network(article.urlToImage!),
-                    const SizedBox(height: 8.0),
-                    Text(
-                      article.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16.0,
-                      ),
-                    ),
-                    const SizedBox(height: 4.0),
-                    if (article.description != null)
-                      Text(article.description!),
-                  ],
-                ),
-              ),
-            ),
           );
-        },
-      ),
+        } else {
+          return const Center(child: Text('No news available'));
+        }
+  }),
     );
   }
 }

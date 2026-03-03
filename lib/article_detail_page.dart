@@ -3,7 +3,7 @@ import 'package:news_app/article_model.dart';
 
 
 class ArticleDetailPage extends StatelessWidget {
-  final Article article;
+  final NewsModel article;
 
   const ArticleDetailPage({super.key, required this.article});
 
